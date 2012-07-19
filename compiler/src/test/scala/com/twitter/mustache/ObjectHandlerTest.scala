@@ -7,7 +7,9 @@ import java.util.concurrent.Executors
 import org.junit.{Assert, Test}
 
 class ObjectHandlerTest {
-  @Test
+
+
+   @Test
   def testHandler() {
     val pool = Executors.newCachedThreadPool()
     val futurePool = FuturePool(pool)
@@ -43,4 +45,30 @@ class ObjectHandlerTest {
     writer.close()
     Assert.assertEquals("Hello, world!?!\nGoodbye, thanks for all the fish!!?test\n", sw.toString)
   }
+ 
+  case class User(name: String, email: String)
+  case class Content(id: Long, name: String, users: List[User])
+
+  @Test
+  def testCaseClass(){
+    // fake data
+    val user = User("bla", "a@b.com")
+    val user1 = User("bli", "bbbbb@b.com")
+    val content = Content(42, "cname", List(user, user1))
+    
+    val pool = Executors.newCachedThreadPool()
+    val futurePool = FuturePool(pool)
+    val mf = new DefaultMustacheFactory()
+    mf.setObjectHandler(new TwitterObjectHandler)
+    mf.setExecutorService(pool)
+    val m = mf.compile(
+      new StringReader("{{name}} <ul>{{#users}}<li>{{name}}-{{email}}</li>{{/users}}</ul>"),
+      "test")
+    val sw = new StringWriter
+    val writer = m.execute(sw, content)
+    // You must use close if you use concurrent latched writers
+    writer.close()
+    Assert.assertEquals("cname <ul><li>bla-a@b.com</li><li>bli-bbbbb@b.com</li></ul>", sw.toString)
+  }
+
 }
