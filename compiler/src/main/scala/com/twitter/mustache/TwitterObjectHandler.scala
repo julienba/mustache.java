@@ -22,6 +22,7 @@ class TwitterObjectHandler extends ReflectionObjectHandler {
         case Some(some: Object) => coerce(some)
         case None => null
       }
+      case case l: List[_] => asJavaList(l)
       case f: Future[_] => {
         new Callable[Any]() {
           def call() = {
